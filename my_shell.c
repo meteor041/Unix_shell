@@ -2,7 +2,7 @@
  * MyShell - 一个简单的Shell实现
  * 作者：刘鑫宇
  * 学号：23371510
- * 日期：2023-06-15
+ * 日期：2025-04-14
  * 功能：
  *   1. 运行不带参数的外部命令
  *   2. 支持标准I/O重定向
@@ -16,11 +16,14 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <stdbool.h>
+#include <termios.h>
+#include <unistd.h>
 
 #define MAX_CMD_LEN 1024   // 最大命令长度
 #define MAX_ARGS 20        // 最大参数数量
 #define PROMPT "myshell> " // 命令提示符
 
+volatile sig_atomic_t sigint_received = 0;
 // 解析输入的命令行
 int parse_command(char *cmdline, char **args) {
     int i = 0;
@@ -146,7 +149,10 @@ void handle_pipe_command(char **args1, char **args2) {
 }
 
 void sigint_handler(int sig) {
-	printf("recieved ctrl+c\n");
+    sigint_received = 1;
+    write(STDOUT_FILENO, "\n" PROMPT, strlen("\n" PROMPT));
+    tcflush(STDIN_FILENO, TCIFLUSH);
+    fflush(stdout);
 }
 
 // 主函数
@@ -160,9 +166,15 @@ int main() {
     
     while (1) {
         printf(PROMPT);
+	fflush(stdout);
         if (fgets(cmdline, sizeof(cmdline), stdin) == NULL) {
             printf("\n");
             break; // 处理Ctrl+D
+        } else if (sigint_received) {
+	    // 如果是被 SIGINT 中断，继续循环
+            clearerr(stdin);  // 清除 stdin 的错误状态
+	    sigint_received = 0;
+            continue;
         }
         
         if (strcmp(cmdline, "\n") == 0) {
