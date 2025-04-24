@@ -54,6 +54,29 @@ make run
 make clean
 ```
 
+### **4. 使用 Docker 运行（Windows）**  
+确保已安装 Docker Desktop for Windows，然后按以下步骤操作：  
+
+#### **创建 Dockerfile**  
+在项目根目录创建 `Dockerfile`：  
+```dockerfile
+FROM gcc:latest
+WORKDIR /app
+COPY . .
+RUN make
+CMD ["./my_shell.o"]
+```
+
+#### **构建镜像**  
+```bash
+docker build -t myshell .
+```
+
+#### **运行容器**  
+```bash
+docker run -it myshell
+```
+
 ---
 
 ## **📖 使用示例**  
